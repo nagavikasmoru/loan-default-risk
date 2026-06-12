@@ -6,6 +6,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import json
 import shap
 import warnings
 warnings.filterwarnings('ignore')
@@ -47,11 +48,18 @@ ALL_FEATURES = ['NAME_CONTRACT_TYPE', 'FLAG_OWN_CAR', 'FLAG_OWN_REALTY', 'CNT_CH
 
 @st.cache_resource
 def load_artifacts():
-    model   = joblib.load("lgbm_model.pkl")
-    imputer = joblib.load("imputer.pkl")
-    return model, imputer
+    model = joblib.load("lgbm_model.pkl")
+    with open("imputer_medians.json") as f:
+        medians = json.load(f)
+    return model, medians
 
-model, imputer = load_artifacts()
+model, imputer_medians = load_artifacts()
+
+def impute(df):
+    out = df.copy()
+    for col in ALL_FEATURES:
+        out[col] = out[col].fillna(imputer_medians.get(col, 0))
+    return out[ALL_FEATURES].values.astype(float)
 
 
 def build_feature_row(raw: dict) -> pd.DataFrame:
@@ -229,7 +237,7 @@ tab1, tab2, tab3 = st.tabs(["📋 Prediction", "📊 SHAP Explanation", "ℹ️ 
 with tab1:
     if predict_btn:
         features_df = build_feature_row(raw_input)
-        X_imp = imputer.transform(features_df)
+        X_imp = impute(features_df)
         proba = model.predict_proba(X_imp)[0][1]
         label, css_class, color = risk_label(proba)
 
@@ -298,7 +306,7 @@ with tab2:
         st.caption("Red = increases default risk · Blue = decreases default risk")
         try:
             features_df = build_feature_row(raw_input)
-            X_imp = imputer.transform(features_df)
+            X_imp = impute(features_df)
             explainer   = shap.TreeExplainer(model)
             shap_values = explainer.shap_values(X_imp)
 
