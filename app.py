@@ -7,7 +7,10 @@ import pandas as pd
 import numpy as np
 import joblib
 import json
+import os
 import shap
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -62,8 +65,8 @@ MODEL_METRICS = {
 
 @st.cache_resource
 def load_artifacts(model_name):
-    mdl = joblib.load(MODEL_FILES[model_name])
-    with open("imputer_medians.json") as f:
+    mdl = joblib.load(os.path.join(BASE_DIR, MODEL_FILES[model_name]))
+    with open(os.path.join(BASE_DIR, "imputer_medians.json")) as f:
         medians = json.load(f)
     return mdl, medians
 
