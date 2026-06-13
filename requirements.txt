@@ -6,5 +6,4 @@ shap
 xgboost
 lightgbm
 scikit-learn
-imbalanced-learn
 joblib
